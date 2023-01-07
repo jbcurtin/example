@@ -1,0 +1,45 @@
+version: "3"
+networks:
+  metrics:
+    driver: bridge
+
+services:
+  webservice:
+    image: appname-webservice:latest
+    dns:
+      - 8.8.8.8
+    networks:
+      metrics:
+    environment:
+      PSQL_URL: 'postgresql://sus:abc@suspage_store:5432/page'
+      MIGRATE_DB: 'yes'
+    # volumes:
+    #   - ./data/webservice/search-images:/data/search-images:rw
+    depends_on:
+      - suspage_sessions
+      - suspage_store
+    ports:
+      - "8000:8000"
+
+  suspage_sessions:
+    dns:
+      - 8.8.8.8
+    networks:
+      metrics:
+    image: redis:5.0.3-alpine
+
+  suspage_store:
+    dns:
+      - 8.8.8.8
+    networks:
+      metrics:
+    image: postgis/postgis:latest
+    volumes:
+      - ./docker-data/postgresql-data:/mnt/data:rw
+    environment:
+      POSTGRES_PASSWORD: 'abc'
+      POSTGRES_USER: 'sus'
+      PGDATA: '/mnt/data'
+      POSTGRES_DB: 'page'
+      POSTGRES_INITDB_ARGS: '-D /mnt/data'
+      POSTGRES_PORT: 5432
